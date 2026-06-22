@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>喵喵便签</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --app-bg: #f0e6d3;
+            --app-text: #2f2a24;
+            --header-bg: #f0e6d3;
+            --header-border: rgba(90, 70, 45, 0.18);
+            --field-bg: #fffdf8;
+            --field-border: #cdbf9f;
+            --muted-text: #5d5142;
+            --empty-text: #766b5f;
+            --primary-btn: #6f8f72;
+            --accent-btn: #d36b4c;
+            --neutral-btn: #8a7863;
+            --danger-btn: #c34a41;
+            --menu-bg: #fffdf8;
+            --menu-border: rgba(90, 70, 45, 0.18);
+            --menu-shadow: rgba(65, 48, 31, 0.16);
+        }
+
+        body[data-app-theme="blue"] {
+            --app-bg: #eaf6ff;
+            --app-text: #203646;
+            --header-bg: #dff0ff;
+            --header-border: rgba(60, 124, 170, 0.22);
+            --field-bg: #fbfdff;
+            --field-border: #a9cfe9;
+            --muted-text: #48677d;
+            --empty-text: #5c7890;
+            --primary-btn: #4f8bb4;
+            --accent-btn: #d07182;
+            --neutral-btn: #647f93;
+            --menu-bg: #f7fbff;
+            --menu-border: rgba(60, 124, 170, 0.24);
+            --menu-shadow: rgba(40, 92, 130, 0.16);
+        }
+
+        body[data-app-theme="pink"] {
+            --app-bg: #fff0f5;
+            --app-text: #4a2734;
+            --header-bg: #ffe3ed;
+            --header-border: rgba(180, 84, 118, 0.2);
+            --field-bg: #fffafd;
+            --field-border: #edb5c9;
+            --muted-text: #7b4b5f;
+            --empty-text: #8b6173;
+            --primary-btn: #b96f8c;
+            --accent-btn: #d56a72;
+            --neutral-btn: #8f7080;
+            --menu-bg: #fffafd;
+            --menu-border: rgba(180, 84, 118, 0.22);
+            --menu-shadow: rgba(130, 55, 82, 0.15);
+        }
+
+        /* 淡红色应用主题，提供比淡粉更暖的卡片和背景色。 */
+        body[data-app-theme="red"] {
+            --app-bg: #fff1f0;
+            --app-text: #4a2420;
+            --header-bg: #ffe4e1;
+            --header-border: rgba(190, 83, 72, 0.2);
+            --field-bg: #fffafa;
+            --field-border: #efb5ad;
+            --muted-text: #7f4d47;
+            --empty-text: #8b625d;
+            --primary-btn: #b96a61;
+            --accent-btn: #c95f55;
+            --neutral-btn: #8c6b68;
+            --menu-bg: #fffafa;
+            --menu-border: rgba(190, 83, 72, 0.22);
+            --menu-shadow: rgba(130, 54, 48, 0.15);
+        }
+
+        body[data-app-theme="green"] {
+            --app-bg: #edf8ef;
+            --app-text: #253d2c;
+            --header-bg: #dff1e4;
+            --header-border: rgba(70, 140, 91, 0.2);
+            --field-bg: #fbfffc;
+            --field-border: #abcdb5;
+            --muted-text: #4f725a;
+            --empty-text: #617b68;
+            --primary-btn: #5e986b;
+            --accent-btn: #c98258;
+            --neutral-btn: #6e806f;
+            --menu-bg: #fbfffc;
+            --menu-border: rgba(70, 140, 91, 0.24);
+            --menu-shadow: rgba(48, 104, 64, 0.14);
+        }
+
+        body[data-app-theme="gray"] {
+            --app-bg: #f2f3f5;
+            --app-text: #30343a;
+            --header-bg: #e7e9ed;
+            --header-border: rgba(80, 86, 94, 0.18);
+            --field-bg: #ffffff;
+            --field-border: #bdc2ca;
+            --muted-text: #5c626b;
+            --empty-text: #727780;
+            --primary-btn: #627086;
+            --accent-btn: #b96f5e;
+            --neutral-btn: #747a84;
+            --menu-bg: #ffffff;
+            --menu-border: rgba(80, 86, 94, 0.2);
+            --menu-shadow: rgba(40, 45, 54, 0.13);
+        }
+
+        body[data-app-theme="mono"] {
+            --app-bg: #f8f8f8;
+            --app-text: #111111;
+            --header-bg: #ffffff;
+            --header-border: rgba(0, 0, 0, 0.18);
+            --field-bg: #ffffff;
+            --field-border: #a6a6a6;
+            --muted-text: #424242;
+            --empty-text: #626262;
+            --primary-btn: #111111;
+            --accent-btn: #555555;
+            --neutral-btn: #707070;
+            --danger-btn: #000000;
+            --menu-bg: #ffffff;
+            --menu-border: rgba(0, 0, 0, 0.24);
+            --menu-shadow: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            background: var(--app-bg);
+            color: var(--app-text);
+            transition: background 160ms ease, color 160ms ease;
+        }
+
+        /* 右键长按拖动背景时，禁止文本选择并显示移动状态。 */
+        body.background-dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10000;
+            padding: 18px 22px 14px;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--header-border);
+            transition: background 160ms ease, border-color 160ms ease;
+        }
+
+        h1 {
+            margin: 0 0 14px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #searchInput {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 12px;
+            border: 1px solid var(--field-border);
+            border-radius: 6px;
+            background: var(--field-bg);
+            color: var(--app-text);
+            font-size: 15px;
+            outline: none;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .toolbar button {
+            padding: 10px 16px;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #searchBtn {
+            background: var(--primary-btn);
+        }
+
+        #addBtn {
+            background: var(--accent-btn);
+        }
+
+        #appThemeBtn {
+            background: var(--neutral-btn);
+        }
+
+        #msg {
+            min-height: 20px;
+            margin: 10px 0 0;
+            color: var(--muted-text);
+            font-size: 14px;
+        }
+
+        #noteBoard {
+            position: relative;
+            min-height: calc(100vh - 130px);
+            padding: 18px;
+        }
+
+        .empty-state {
+            margin: 16px 4px;
+            color: var(--empty-text);
+        }
+
+        .note-card {
+            --card-bg: #fffdf6;
+            --card-text: #2f2a24;
+            --card-border: rgba(90, 70, 45, 0.2);
+            --card-shadow: rgba(65, 48, 31, 0.12);
+            --card-active-border: rgba(137, 104, 64, 0.55);
+            --card-active-shadow: rgba(65, 48, 31, 0.2);
+            --card-field-bg: #ffffff;
+            --card-field-border: #d8c9a9;
+            --card-muted: #766b5f;
+            --card-log: #4f463b;
+            --card-handle: #8a7863;
+            --card-save: #6f8f72;
+            --card-cancel: #8a7863;
+            position: absolute;
+            width: 300px;
+            min-height: 270px;
+            padding: 12px;
+            background: var(--card-bg);
+            color: var(--card-text);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px var(--card-shadow);
+            transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .note-card[data-card-theme="blue"] {
+            --card-bg: #eef8ff;
+            --card-text: #1d3547;
+            --card-border: rgba(72, 139, 192, 0.38);
+            --card-shadow: rgba(54, 115, 158, 0.14);
+            --card-active-border: rgba(57, 128, 180, 0.68);
+            --card-active-shadow: rgba(54, 115, 158, 0.24);
+            --card-field-bg: #fbfdff;
+            --card-field-border: #aed1ea;
+            --card-muted: #55788d;
+            --card-log: #315466;
+            --card-handle: #4f8bb4;
+            --card-save: #4f8bb4;
+            --card-cancel: #647f93;
+        }
+
+        .note-card[data-card-theme="pink"] {
+            --card-bg: #fff0f5;
+            --card-text: #4a2734;
+            --card-border: rgba(191, 104, 134, 0.34);
+            --card-shadow: rgba(152, 73, 101, 0.13);
+            --card-active-border: rgba(184, 89, 123, 0.68);
+            --card-active-shadow: rgba(152, 73, 101, 0.24);
+            --card-field-bg: #fffafd;
+            --card-field-border: #edb5c9;
+            --card-muted: #89586b;
+            --card-log: #664052;
+            --card-handle: #b96f8c;
+            --card-save: #b96f8c;
+            --card-cancel: #8f7080;
+        }
+
+        /* 淡红色卡片主题，供单张卡片和桌面便签复用。 */
+        .note-card[data-card-theme="red"] {
+            --card-bg: #fff1f0;
+            --card-text: #4a2420;
+            --card-border: rgba(197, 91, 80, 0.34);
+            --card-shadow: rgba(150, 62, 54, 0.13);
+            --card-active-border: rgba(190, 83, 72, 0.68);
+            --card-active-shadow: rgba(150, 62, 54, 0.24);
+            --card-field-bg: #fffafa;
+            --card-field-border: #efb5ad;
+            --card-muted: #8a5952;
+            --card-log: #663b36;
+            --card-handle: #b96a61;
+            --card-save: #b96a61;
+            --card-cancel: #8c6b68;
+        }
+
+        .note-card[data-card-theme="green"] {
+            --card-bg: #eff9f1;
+            --card-text: #253d2c;
+            --card-border: rgba(88, 153, 104, 0.34);
+            --card-shadow: rgba(60, 120, 74, 0.13);
+            --card-active-border: rgba(79, 142, 95, 0.68);
+            --card-active-shadow: rgba(60, 120, 74, 0.22);
+            --card-field-bg: #fbfffc;
+            --card-field-border: #b5d5bd;
+            --card-muted: #5a7a62;
+            --card-log: #3d6247;
+            --card-handle: #5e986b;
+            --card-save: #5e986b;
+            --card-cancel: #6e806f;
+        }
+
+        .note-card[data-card-theme="gray"] {
+            --card-bg: #f5f6f8;
+            --card-text: #30343a;
+            --card-border: rgba(103, 111, 122, 0.32);
+            --card-shadow: rgba(69, 75, 84, 0.12);
+            --card-active-border: rgba(98, 112, 134, 0.68);
+            --card-active-shadow: rgba(69, 75, 84, 0.22);
+            --card-field-bg: #ffffff;
+            --card-field-border: #c6cbd3;
+            --card-muted: #68707c;
+            --card-log: #4d535d;
+            --card-handle: #627086;
+            --card-save: #627086;
+            --card-cancel: #747a84;
+        }
+
+        .note-card[data-card-theme="mono"] {
+            --card-bg: #ffffff;
+            --card-text: #111111;
+            --card-border: #111111;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --card-active-border: #000000;
+            --card-active-shadow: rgba(0, 0, 0, 0.18);
+            --card-field-bg: #ffffff;
+            --card-field-border: #777777;
+            --card-muted: #444444;
+            --card-log: #222222;
+            --card-handle: #111111;
+            --card-save: #111111;
+            --card-cancel: #686868;
+        }
+
+        .note-card.is-active {
+            border-color: var(--card-active-border);
+            box-shadow: 0 14px 34px var(--card-active-shadow);
+        }
+
+        .note-card.dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+
+        .note-card.can-drag {
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .note-header {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .drag-handle {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 50%;
+            background: var(--card-handle);
+            line-height: 28px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .note-title {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--card-field-border);
+            border-radius: 6px;
+            background: var(--card-field-bg);
+            color: var(--card-text);
+            font-size: 15px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .note-content {
+            width: 100%;
+            height: 96px;
+            resize: vertical;
+            padding: 9px;
+            border: 1px solid var(--card-field-border);
+            border-radius: 6px;
+            background: var(--card-field-bg);
+            color: var(--card-text);
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            outline: none;
+        }
+
+        .note-meta {
+            margin-top: 10px;
+            color: var(--card-muted);
+            font-size: 12px;
+            line-height: 1.5;
+            user-select: none;
+        }
+
+        .note-log {
+            margin-top: 8px;
+            color: var(--card-log);
+            font-size: 12px;
+            user-select: none;
+        }
+
+        .note-log summary {
+            cursor: pointer;
+        }
+
+        .note-log ul {
+            margin: 6px 0 0;
+            padding-left: 18px;
+        }
+
+        .floating-menu {
+            position: fixed;
+            z-index: 30000;
+            min-width: 150px;
+            padding: 8px;
+            background: var(--menu-bg);
+            border: 1px solid var(--menu-border);
+            border-radius: 8px;
+            box-shadow: 0 14px 34px var(--menu-shadow);
+        }
+
+        .floating-menu-title {
+            margin: 2px 4px 8px;
+            color: var(--muted-text);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .menu-action,
+        .theme-option {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--app-text);
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .menu-action:hover,
+        .theme-option:hover,
+        .menu-action.is-active,
+        .theme-option.is-active {
+            background: rgba(0, 0, 0, 0.07);
+        }
+
+        .menu-action.danger {
+            color: var(--danger-btn);
+        }
+
+        .theme-swatch {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            border-radius: 50%;
+        }
+
+        .delete-confirm-card {
+            position: fixed;
+            z-index: 25000;
+            width: min(330px, calc(100vw - 32px));
+            padding: 16px;
+            background: var(--menu-bg);
+            border: 1px solid var(--menu-border);
+            border-radius: 8px;
+            box-shadow: 0 18px 42px var(--menu-shadow);
+            color: var(--app-text);
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .delete-confirm-card.dragging {
+            cursor: grabbing;
+        }
+
+        .delete-confirm-card h2 {
+            margin: 0 0 8px;
+            font-size: 18px;
+        }
+
+        .delete-confirm-card p {
+            margin: 0;
+            color: var(--muted-text);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .confirm-actions button {
+            padding: 8px 13px;
+            font-size: 14px;
+        }
+
+        .confirm-cancel-btn {
+            background: var(--neutral-btn);
+        }
+
+        .confirm-delete-btn {
+            background: var(--danger-btn);
+        }
+
+        @media (max-width: 680px) {
+            .toolbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .toolbar button {
+                width: 100%;
+            }
+
+            .note-card {
+                width: calc(100vw - 36px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <h1>喵喵便签</h1>
+        <div class="toolbar">
+            <button id="appThemeBtn">主题</button>
+            <input id="searchInput" placeholder="搜索标题、正文或修改日志">
+            <button id="searchBtn">搜索</button>
+            <button id="addBtn">添加</button>
+        </div>
+        <p id="msg"></p>
+    </header>
+
+    <main id="noteBoard"></main>
+
+    <script>
+        // 文件系统 API 用于读写本地 notes.json，保存所有便签数据。
+        const fs = require('fs').promises;
+        // 路径 API 用于定位当前项目内的 notes.json。
+        const path = require('path');
+        // ipcRenderer 用于和 Electron 主进程通信，包括桌面便签、快捷键和窗口拖动。
+        const { ipcRenderer } = require('electron');
+
+        // 本地数据文件路径，所有应用内便签都会持久化到这个 JSON 文件。
+        const DATA_FILE = path.join(__dirname, 'notes.json');
+        // 卡片标准宽度，用于默认布局、居中和整理排序。
+        const CARD_WIDTH = 300;
+        // 卡片标准高度，用于动态扩展画布高度。
+        const CARD_HEIGHT = 270;
+
+        // 卡片画布容器，所有应用内卡片都挂载到这里。
+        const noteBoard = document.getElementById('noteBoard');
+        // 全局主题按钮，点击后展示应用主题菜单。
+        const appThemeBtn = document.getElementById('appThemeBtn');
+        // 搜索输入框，用于按标题、正文和日志搜索。
+        const searchInput = document.getElementById('searchInput');
+        // 搜索按钮，点击后执行搜索。
+        const searchBtn = document.getElementById('searchBtn');
+        // 新增按钮，点击后创建一张应用内草稿便签。
+        const addBtn = document.getElementById('addBtn');
+        // 顶部消息区域，展示保存、删除、同步等反馈。
+        const msgBox = document.getElementById('msg');
+
+        // 所有可选主题定义，全局主题、卡片主题和桌面便签主题共用这份列表。
+        const THEME_OPTIONS = [
+            { id: 'default', name: '默认', swatch: '#fffdf6' },
+            { id: 'blue', name: '淡蓝色', swatch: '#eef8ff' },
+            { id: 'pink', name: '淡粉色', swatch: '#fff0f5' },
+            { id: 'red', name: '淡红色', swatch: '#fff1f0' },
+            { id: 'green', name: '淡绿色', swatch: '#eff9f1' },
+            { id: 'gray', name: '淡灰色', swatch: '#f5f6f8' },
+            { id: 'mono', name: '黑白色', swatch: '#ffffff' }
+        ];
+        // 主题 id 集合，用于快速校验主题是否合法。
+        const THEME_IDS = new Set(THEME_OPTIONS.map((theme) => theme.id));
+        // 默认主题 id，旧数据或异常数据都会回落到它。
+        const DEFAULT_APP_THEME = 'default';
+
+        // 内存中的全部便签数据。
+        let notes = [];
+        // 当前搜索关键字，空字符串表示不过滤。
+        let activeKeyword = '';
+        // 卡片层级计数器，用于把选中卡片置顶。
+        let zCounter = 1;
+        // 当前全局主题，从 localStorage 恢复，没有保存时使用默认主题。
+        let appTheme = localStorage.getItem('appTheme') || DEFAULT_APP_THEME;
+        // 当前打开的浮动菜单引用，便于点击外部或拖动时关闭。
+        let openFloatingMenu = null;
+        // 当前删除确认卡片引用，便于关闭或替换。
+        let deleteConfirmCard = null;
+        // 渲染锁，避免重复渲染造成 DOM 状态抖动。
+        let isRendering = false;
+        // 背景右键长按计时器，达到阈值后进入拖动主窗口状态。
+        let backgroundDragTimer = null;
+        // 标记主窗口背景是否正在被右键长按拖动。
+        let isBackgroundDragging = false;
+        // 记录背景拖动上一次鼠标屏幕 X 坐标。
+        let backgroundDragStartX = 0;
+        // 记录背景拖动上一次鼠标屏幕 Y 坐标。
+        let backgroundDragStartY = 0;
+        // 每张便签的自动保存防抖计时器。
+        const autoSaveTimers = new Map();
+        // 标记内容已改但尚未保存的便签 id。
+        const dirtyNoteIds = new Set();
+        // 已保存快照集合，兼容历史取消逻辑和后续扩展。
+        const savedSnapshots = new Map();
+
+
+        // Returns the current local timestamp for created, updated, and log fields.
+
+
+        function nowText() {
+            return new Date().toLocaleString();
+        }
+
+
+        // Builds a unique note id so app cards and desktop cards can refer to the same data.
+
+
+        function makeId() {
+            return `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+
+
+        // Deep-clones a note object for snapshots without sharing references.
+
+
+        function cloneNote(note) {
+            return JSON.parse(JSON.stringify(note));
+        }
+
+
+        // Writes operation feedback into the header message area.
+
+
+        function setMessage(text) {
+            msgBox.textContent = text;
+        }
+
+
+        // Validates a theme id and falls back to the default theme.
+
+
+        function normalizeTheme(themeId) {
+            return THEME_IDS.has(themeId) ? themeId : DEFAULT_APP_THEME;
+        }
+
+
+        // Applies the app theme and persists it in localStorage.
+
+
+        function applyAppTheme(themeId) {
+            appTheme = normalizeTheme(themeId);
+            document.body.dataset.appTheme = appTheme;
+            localStorage.setItem('appTheme', appTheme);
+        }
+
+
+        // Looks up the display name for a theme id.
+
+
+        function getThemeName(themeId) {
+            return THEME_OPTIONS.find((theme) => theme.id === themeId)?.name || '默认';
+        }
+
+
+        // Computes a fallback grid position for notes without saved coordinates.
+
+
+        function defaultPosition(index) {
+            return {
+                x: 18 + (index % 3) * 320,
+                y: 18 + Math.floor(index / 3) * 290
+            };
+        }
+
+
+        // Computes the center of the visible board area for new notes.
+
+
+        function centerPosition() {
+            const boardRect = noteBoard.getBoundingClientRect();
+            const visibleTop = Math.max(0, -boardRect.top);
+            const visibleHeight = window.innerHeight - Math.max(boardRect.top, 0);
+
+            return {
+                x: Math.max(18, Math.round((noteBoard.clientWidth - CARD_WIDTH) / 2)),
+                y: Math.max(18, Math.round(visibleTop + (visibleHeight - CARD_HEIGHT) / 2))
+            };
+        }
+
+
+        // Normalizes saved JSON data and removes old movement logs.
+
+
+        function normalizeNote(item, index) {
+            const position = defaultPosition(index);
+            const content = typeof item.content === 'string' ? item.content : (item.text || '');
+            const createdAt = item.createdAt || item.time || nowText();
+            const updatedAt = item.updatedAt || item.time || createdAt;
+            const zIndex = Number.isFinite(Number(item.zIndex)) ? Number(item.zIndex) : index + 1;
+            const logs = Array.isArray(item.logs) && item.logs.length > 0
+                ? item.logs.filter((log) => log.text !== '移动位置')
+                : [{ time: updatedAt, text: item.text ? '从旧格式导入' : '创建便签' }];
+
+            zCounter = Math.max(zCounter, zIndex);
+
+            return {
+                id: item.id || makeId(),
+                title: item.title || content.slice(0, 14) || '未命名便签',
+                content,
+                createdAt,
+                updatedAt,
+                logs,
+                x: Number.isFinite(Number(item.x)) ? Number(item.x) : position.x,
+                y: Number.isFinite(Number(item.y)) ? Number(item.y) : position.y,
+                zIndex,
+                theme: normalizeTheme(item.theme)
+            };
+        }
+
+
+        // Converts in-memory notes into the JSON shape saved on disk.
+
+
+        function serializeNotes() {
+            return notes
+                .filter((note) => !note.isDraft)
+                .map((note) => ({
+                    id: note.id,
+                    title: note.title,
+                    content: note.content,
+                    createdAt: note.createdAt,
+                    updatedAt: note.updatedAt,
+                    logs: note.logs,
+                    x: note.x,
+                    y: note.y,
+                    zIndex: note.zIndex,
+                    theme: normalizeTheme(note.theme)
+                }));
+        }
+
+
+        // Refreshes saved snapshots after a successful disk write.
+
+
+        function refreshSnapshots() {
+            savedSnapshots.clear();
+            serializeNotes().forEach((note) => {
+                savedSnapshots.set(note.id, cloneNote(note));
+            });
+        }
+
+        // ? notes.json ?????????????????
+
+        // Reads notes.json and returns normalized note objects.
+
+        async function readNotes() {
+            try {
+                const data = await fs.readFile(DATA_FILE, 'utf-8');
+
+                if (!data.trim()) {
+                    return [];
+                }
+
+                const savedNotes = JSON.parse(data);
+                return Array.isArray(savedNotes)
+                    ? savedNotes.map((item, index) => normalizeNote(item, index))
+                    : [];
+            } catch (error) {
+                if (error.code === 'ENOENT') {
+                    return [];
+                }
+
+                throw error;
+            }
+        }
+
+
+        // Writes current notes to notes.json and refreshes snapshots.
+
+
+        async function writeNotes() {
+            await fs.writeFile(DATA_FILE, JSON.stringify(serializeNotes(), null, 2), 'utf-8');
+            refreshSnapshots();
+        }
+
+
+        // Appends a change log entry and updates the modified time.
+
+
+        function addLog(note, text) {
+            const time = nowText();
+            note.updatedAt = time;
+            note.logs.push({ time, text });
+        }
+
+
+        // Loads notes from disk, normalizes them, and renders the board.
+
+
+        async function loadNotes() {
+            try {
+                notes = await readNotes();
+                await writeNotes();
+                renderNotes();
+            } catch (error) {
+                setMessage(`读取失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Checks whether a note matches the active search text.
+
+
+        function noteMatchesSearch(note) {
+            if (!activeKeyword) {
+                return true;
+            }
+
+            const logText = note.logs.map((log) => `${log.time} ${log.text}`).join(' ');
+            return `${note.title} ${note.content} ${logText}`.toLowerCase().includes(activeKeyword);
+        }
+
+
+        // Expands the board height to contain every positioned card.
+
+
+        function updateBoardHeight() {
+            const bottom = notes.reduce((max, note) => Math.max(max, note.y + CARD_HEIGHT), 0);
+            noteBoard.style.minHeight = `${Math.max(window.innerHeight - 130, bottom + 18)}px`;
+        }
+
+
+        // Renders all notes that match the current search filter.
+
+
+        function renderNotes() {
+            if (isRendering) {
+                return;
+            }
+
+            isRendering = true;
+            const visibleNotes = notes.filter(noteMatchesSearch);
+
+            noteBoard.innerHTML = '';
+            updateBoardHeight();
+
+            if (visibleNotes.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'empty-state';
+                empty.textContent = activeKeyword ? '没有匹配的便签' : '暂无便签';
+                noteBoard.appendChild(empty);
+                isRendering = false;
+                return;
+            }
+
+            visibleNotes.forEach((note) => {
+                noteBoard.appendChild(createNoteCard(note));
+            });
+            isRendering = false;
+        }
+
+
+        // Creates a card element and wires editing, menus, autosave, and dragging.
+
+
+        function createNoteCard(note) {
+            const card = document.createElement('section');
+            card.className = 'note-card can-drag';
+            card.dataset.id = note.id;
+            card.dataset.cardTheme = normalizeTheme(note.theme);
+            card.style.left = `${note.x}px`;
+            card.style.top = `${note.y}px`;
+            card.style.zIndex = note.zIndex;
+
+            const header = document.createElement('div');
+            header.className = 'note-header';
+
+            const titleInput = document.createElement('input');
+            titleInput.className = 'note-title';
+            titleInput.value = note.title;
+            titleInput.placeholder = '标题';
+
+            const menuHandle = document.createElement('button');
+            menuHandle.className = 'drag-handle';
+            menuHandle.type = 'button';
+            menuHandle.textContent = '⋯';
+            menuHandle.title = '打开菜单';
+            menuHandle.setAttribute('aria-label', '打开菜单');
+
+            const contentInput = document.createElement('textarea');
+            contentInput.className = 'note-content';
+            contentInput.value = note.content;
+            contentInput.placeholder = '正文内容';
+
+            const meta = document.createElement('div');
+            meta.className = 'note-meta';
+            meta.innerHTML = `创建时间：${note.createdAt}<br>修改时间：${note.updatedAt}`;
+
+            const details = document.createElement('details');
+            details.className = 'note-log';
+
+            const summary = document.createElement('summary');
+            summary.textContent = '修改日志';
+
+            const logList = document.createElement('ul');
+            note.logs.slice().reverse().forEach((log) => {
+                const item = document.createElement('li');
+                item.textContent = `${log.time} - ${log.text}`;
+                logList.appendChild(item);
+            });
+
+            card.addEventListener('pointerdown', () => {
+                bringToFront(note, card);
+            });
+
+            titleInput.addEventListener('input', () => {
+                note.title = titleInput.value;
+                dirtyNoteIds.add(note.id);
+                scheduleAutoSave(note.id);
+            });
+
+            contentInput.addEventListener('input', () => {
+                note.content = contentInput.value;
+                dirtyNoteIds.add(note.id);
+                scheduleAutoSave(note.id);
+            });
+
+            titleInput.addEventListener('blur', () => flushAutoSave(note.id));
+            contentInput.addEventListener('blur', () => flushAutoSave(note.id));
+            titleInput.addEventListener('keydown', (event) => handleEnterSave(event, note.id));
+            contentInput.addEventListener('keydown', (event) => handleEnterSave(event, note.id));
+
+            menuHandle.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                showCardMenu(note, card, menuHandle);
+            });
+
+            setupCardDrag(card, note);
+
+            header.append(titleInput, menuHandle);
+            details.append(summary, logList);
+            card.append(header, contentInput, meta, details);
+
+            return card;
+        }
+
+
+        // Raises the selected card above the others.
+
+
+        function bringToFront(note, card) {
+            zCounter += 1;
+            note.zIndex = zCounter;
+
+            document.querySelectorAll('.note-card').forEach((item) => {
+                item.classList.remove('is-active');
+            });
+
+            card.classList.add('is-active');
+            card.style.zIndex = note.zIndex;
+        }
+
+
+        // Saves on Enter while allowing Shift+Enter in textareas.
+
+
+        function handleEnterSave(event, noteId) {
+            if (event.key !== 'Enter' || event.isComposing) {
+                return;
+            }
+
+            if (event.target.tagName === 'TEXTAREA' && event.shiftKey) {
+                return;
+            }
+
+            event.preventDefault();
+            saveOneNote(noteId);
+        }
+
+
+        // Debounces autosave while the user is typing.
+
+
+        function scheduleAutoSave(noteId) {
+            clearTimeout(autoSaveTimers.get(noteId));
+            autoSaveTimers.set(noteId, setTimeout(() => {
+                autoSaveTimers.delete(noteId);
+                saveOneNote(noteId, { rerender: false });
+            }, 500));
+        }
+
+
+        // Immediately runs a pending autosave when needed.
+
+
+        function flushAutoSave(noteId) {
+            if (!autoSaveTimers.has(noteId)) {
+                return Promise.resolve();
+            }
+
+            clearTimeout(autoSaveTimers.get(noteId));
+            autoSaveTimers.delete(noteId);
+            return saveOneNote(noteId, { rerender: false });
+        }
+
+
+        // Saves one note and records content edits in the log.
+
+
+        async function saveOneNote(noteId, options = {}) {
+            const note = notes.find((item) => item.id === noteId);
+
+            if (!note) {
+                return;
+            }
+
+            if (!note.title.trim()) {
+                note.title = '未命名便签';
+            }
+
+            if (note.isDraft) {
+                note.isDraft = false;
+            } else if (dirtyNoteIds.has(noteId)) {
+                addLog(note, '自动保存修改');
+            }
+
+            dirtyNoteIds.delete(noteId);
+
+            try {
+                await writeNotes();
+                setMessage(`已自动保存：${note.title}`);
+
+                if (options.rerender) {
+                    renderNotes();
+                }
+            } catch (error) {
+                setMessage(`保存失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Closes the currently open floating menu.
+
+
+        function closeFloatingMenu() {
+            if (openFloatingMenu) {
+                openFloatingMenu.remove();
+                openFloatingMenu = null;
+            }
+        }
+
+
+        // Places a floating menu near its anchor without overflowing the window.
+
+
+        function positionFloatingMenu(menu, anchorRect) {
+            document.body.appendChild(menu);
+
+            const gap = 8;
+            const menuRect = menu.getBoundingClientRect();
+            const left = Math.max(
+                10,
+                Math.min(anchorRect.left, window.innerWidth - menuRect.width - 10)
+            );
+            const below = anchorRect.bottom + gap;
+            const top = below + menuRect.height > window.innerHeight - 10
+                ? Math.max(10, anchorRect.top - menuRect.height - gap)
+                : below;
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+        }
+
+
+        // Creates one theme option button with a color swatch.
+
+
+        function createThemeOption(theme, currentTheme, onChoose) {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = `theme-option${theme.id === currentTheme ? ' is-active' : ''}`;
+
+            const swatch = document.createElement('span');
+            swatch.className = 'theme-swatch';
+            swatch.style.background = theme.id === 'mono'
+                ? 'linear-gradient(90deg, #fff 0 50%, #111 50% 100%)'
+                : theme.swatch;
+
+            const label = document.createElement('span');
+            label.textContent = theme.name;
+
+            option.append(swatch, label);
+            option.addEventListener('click', (event) => {
+                event.stopPropagation();
+                onChoose(theme.id);
+            });
+
+            return option;
+        }
+
+
+        // Opens the global app theme menu.
+
+
+        function showAppThemeMenu() {
+            closeFloatingMenu();
+
+            const menu = document.createElement('div');
+            menu.className = 'floating-menu';
+
+            const title = document.createElement('div');
+            title.className = 'floating-menu-title';
+            title.textContent = '更换主题';
+
+            menu.appendChild(title);
+            THEME_OPTIONS.forEach((theme) => {
+                menu.appendChild(createThemeOption(theme, appTheme, (themeId) => {
+                    applyAppTheme(themeId);
+                    setMessage(`已切换为${getThemeName(themeId)}主题`);
+                    closeFloatingMenu();
+                }));
+            });
+
+            openFloatingMenu = menu;
+            positionFloatingMenu(menu, appThemeBtn.getBoundingClientRect());
+        }
+
+
+        // Opens the per-card menu for delete, theme, and desktop actions.
+
+
+        function showCardMenu(note, card, anchor) {
+            closeFloatingMenu();
+
+            const menu = document.createElement('div');
+            menu.className = 'floating-menu';
+
+
+            // Renders the first-level card menu actions on one page.
+
+
+            function renderMainMenu() {
+                menu.replaceChildren();
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'menu-action danger';
+                deleteBtn.textContent = '删除';
+                deleteBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    closeFloatingMenu();
+                    showDeleteConfirm(note);
+                });
+
+                const themeBtn = document.createElement('button');
+                themeBtn.type = 'button';
+                themeBtn.className = 'menu-action';
+                themeBtn.textContent = '修改主题';
+                themeBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    renderThemeMenu();
+                });
+
+                const desktopBtn = document.createElement('button');
+                desktopBtn.type = 'button';
+                desktopBtn.className = 'menu-action';
+                desktopBtn.textContent = '添加到桌面';
+                desktopBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    addNoteToDesktop(note.id);
+                    closeFloatingMenu();
+                });
+
+                menu.append(deleteBtn, themeBtn, desktopBtn);
+            }
+
+
+            // Renders the card theme picker page.
+
+
+            function renderThemeMenu() {
+                menu.replaceChildren();
+
+                const backBtn = document.createElement('button');
+                backBtn.type = 'button';
+                backBtn.className = 'menu-action';
+                backBtn.textContent = '返回';
+                backBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    renderMainMenu();
+                    positionFloatingMenu(menu, anchor.getBoundingClientRect());
+                });
+
+                const title = document.createElement('div');
+                title.className = 'floating-menu-title';
+                title.textContent = '卡片主题';
+
+                menu.append(backBtn, title);
+                THEME_OPTIONS.forEach((theme) => {
+                    menu.appendChild(createThemeOption(theme, normalizeTheme(note.theme), (themeId) => {
+                        changeNoteTheme(note.id, themeId);
+                        closeFloatingMenu();
+                    }));
+                });
+
+                positionFloatingMenu(menu, anchor.getBoundingClientRect());
+            }
+
+            renderMainMenu();
+
+            openFloatingMenu = menu;
+            positionFloatingMenu(menu, anchor.getBoundingClientRect());
+            bringToFront(note, card);
+        }
+
+
+        // Creates a linked desktop card window for the current note.
+
+
+        async function addNoteToDesktop(noteId) {
+            const note = notes.find((item) => item.id === noteId);
+
+            if (!note) {
+                return;
+            }
+
+            await flushAutoSave(note.id);
+
+            if (note.isDraft) {
+                await saveOneNote(note.id, { rerender: false });
+            }
+
+            ipcRenderer.send('desktop-card:create', {
+                id: note.id,
+                title: note.title || '未命名便签',
+                content: note.content,
+                updatedAt: note.updatedAt,
+                theme: normalizeTheme(note.theme)
+            });
+            setMessage(`已添加到桌面：${note.title || '未命名便签'}`);
+        }
+
+
+        // Changes and saves the selected note theme.
+
+
+        async function changeNoteTheme(noteId, themeId) {
+            const note = notes.find((item) => item.id === noteId);
+
+            if (!note) {
+                return;
+            }
+
+            note.theme = normalizeTheme(themeId);
+
+            if (note.isDraft) {
+                note.isDraft = false;
+            }
+
+            try {
+                addLog(note, `更换主题为${getThemeName(note.theme)}`);
+                await writeNotes();
+                renderNotes();
+                setMessage(`已为${note.title || '当前卡片'}设置${getThemeName(note.theme)}主题`);
+            } catch (error) {
+                setMessage(`保存主题失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Shows the draggable delete confirmation card.
+
+
+        function showDeleteConfirm(note) {
+            removeDeleteConfirm();
+
+            const card = document.createElement('section');
+            card.className = 'delete-confirm-card';
+            card.style.left = `${Math.max(16, Math.round((window.innerWidth - 330) / 2))}px`;
+            card.style.top = `${Math.max(90, Math.round(window.innerHeight * 0.28))}px`;
+
+            const title = document.createElement('h2');
+            title.textContent = '要删除这张卡片吗？';
+
+            const text = document.createElement('p');
+            text.textContent = `删除后将移除“${note.title || '未命名便签'}”，确定后立即保存。`;
+
+            const actions = document.createElement('div');
+            actions.className = 'confirm-actions';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'confirm-cancel-btn';
+            cancelBtn.textContent = '取消';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'confirm-delete-btn';
+            deleteBtn.textContent = '确定';
+
+            cancelBtn.addEventListener('click', removeDeleteConfirm);
+            deleteBtn.addEventListener('click', () => deleteNote(note.id));
+
+            actions.append(cancelBtn, deleteBtn);
+            card.append(title, text, actions);
+            document.body.appendChild(card);
+            deleteConfirmCard = card;
+            setupConfirmCardDrag(card);
+        }
+
+
+        // Removes the delete confirmation card.
+
+
+        function removeDeleteConfirm() {
+            if (deleteConfirmCard) {
+                deleteConfirmCard.remove();
+                deleteConfirmCard = null;
+            }
+        }
+
+
+        // Deletes a note and saves the updated note list.
+
+
+        async function deleteNote(noteId) {
+            const noteIndex = notes.findIndex((item) => item.id === noteId);
+
+            if (noteIndex === -1) {
+                removeDeleteConfirm();
+                return;
+            }
+
+            const [removedNote] = notes.splice(noteIndex, 1);
+            dirtyNoteIds.delete(noteId);
+            savedSnapshots.delete(noteId);
+            removeDeleteConfirm();
+
+            try {
+                await writeNotes();
+                setMessage(`已删除：${removedNote.title || '未命名便签'}`);
+                renderNotes();
+            } catch (error) {
+                notes.splice(noteIndex, 0, removedNote);
+                setMessage(`删除失败：${error.message}`);
+                renderNotes();
+                console.error(error);
+            }
+        }
+
+
+        // Applies the search text and refreshes visible cards.
+
+
+        function applySearch() {
+            activeKeyword = searchInput.value.trim().toLowerCase();
+            renderNotes();
+            setMessage(activeKeyword ? `正在搜索：${searchInput.value.trim()}` : '已显示全部便签');
+        }
+
+
+        // Creates a standard note object for normal and quick-note flows.
+
+
+        function createNote(initial = {}) {
+            const time = nowText();
+            const position = initial.position || centerPosition();
+
+            return {
+                id: makeId(),
+                title: initial.title || '',
+                content: initial.content || '',
+                createdAt: time,
+                updatedAt: time,
+                logs: [{ time, text: '创建便签' }],
+                x: position.x,
+                y: position.y,
+                zIndex: zCounter + 1,
+                theme: normalizeTheme(initial.theme),
+                isDraft: Boolean(initial.isDraft)
+            };
+        }
+
+
+        // Adds a draft note inside the app.
+
+
+        function addNote() {
+            activeKeyword = '';
+            searchInput.value = '';
+
+            const note = createNote({ isDraft: true });
+
+            zCounter = note.zIndex;
+            notes.push(note);
+            dirtyNoteIds.add(note.id);
+            setMessage('已添加新便签，输入后会自动保存');
+            renderNotes();
+
+            const card = document.querySelector(`[data-id="${note.id}"]`);
+            const titleInput = card?.querySelector('.note-title');
+
+            if (card) {
+                bringToFront(note, card);
+            }
+
+            titleInput?.focus();
+        }
+
+        // ?? Ctrl+Q??????????????????????
+
+        // Creates a Ctrl+Q quick note in the app and as a centered desktop card.
+
+        async function createQuickDesktopNote() {
+            activeKeyword = '';
+            searchInput.value = '';
+
+            const note = createNote({
+                title: '快速便签',
+                content: '',
+                position: centerPosition(),
+                isDraft: false
+            });
+
+            zCounter = note.zIndex;
+            notes.push(note);
+
+            try {
+                await writeNotes();
+                renderNotes();
+                ipcRenderer.send('desktop-card:create', {
+                    id: note.id,
+                    title: note.title,
+                    content: note.content,
+                    updatedAt: note.updatedAt,
+                    theme: normalizeTheme(note.theme)
+                }, { center: true });
+                setMessage('已在桌面中心创建快速便签');
+            } catch (error) {
+                setMessage(`创建快速便签失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Applies edits made in a desktop card back to the app note.
+
+
+        async function updateNoteFromDesktop(notePatch) {
+            const note = notes.find((item) => item.id === notePatch.id);
+
+            if (!note) {
+                return;
+            }
+
+            note.title = notePatch.title || '未命名便签';
+            note.content = notePatch.content || '';
+            note.updatedAt = notePatch.updatedAt || nowText();
+            note.isDraft = false;
+            addLog(note, '桌面便签修改');
+
+            try {
+                await writeNotes();
+                renderNotes();
+                setMessage(`已同步桌面便签：${note.title}`);
+            } catch (error) {
+                setMessage(`同步桌面便签失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Sorts notes by modified time and lays them out horizontally.
+
+
+        async function organizeNotes() {
+            activeKeyword = '';
+            searchInput.value = '';
+            closeFloatingMenu();
+            removeDeleteConfirm();
+
+            const sortedNotes = notes
+                .slice()
+                .sort((left, right) => new Date(left.updatedAt).getTime() - new Date(right.updatedAt).getTime());
+
+            const maxPerRow = 6;
+            const gapX = 18;
+            const gapY = 18;
+            const rowHeight = CARD_HEIGHT + gapY;
+
+            sortedNotes.forEach((note, index) => {
+                const column = index % maxPerRow;
+                const row = Math.floor(index / maxPerRow);
+                note.x = 18 + column * (CARD_WIDTH + gapX);
+                note.y = 18 + row * rowHeight;
+                note.zIndex = index + 1;
+            });
+
+            notes = sortedNotes;
+            zCounter = Math.max(notes.length, zCounter);
+
+            try {
+                await writeNotes();
+                renderNotes();
+                setMessage('已按最后修改时间横向整理');
+            } catch (error) {
+                setMessage(`整理失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Returns true when a target should not start card dragging.
+
+
+        function isCardDragBlocked(target) {
+            return Boolean(target.closest('input, textarea, button, summary, a, select, option, details'));
+        }
+
+
+        // Returns true when a target should not start background window dragging.
+
+
+        function isBackgroundDragBlocked(target) {
+            return Boolean(target.closest('.app-header, .note-card, input, textarea, button, summary, a, select, option, details, .floating-menu, .delete-confirm-card'));
+        }
+
+
+        // Enables long right-click dragging of the note background to pan every card together.
+
+
+        function setupBackgroundRightDrag() {
+            document.addEventListener('contextmenu', (event) => {
+                if (isBackgroundDragging) {
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('pointerdown', (event) => {
+                if (event.button !== 2 || isBackgroundDragBlocked(event.target)) {
+                    return;
+                }
+
+                backgroundDragStartX = event.clientX;
+                backgroundDragStartY = event.clientY;
+                clearTimeout(backgroundDragTimer);
+                backgroundDragTimer = setTimeout(() => {
+                    isBackgroundDragging = true;
+                    document.body.classList.add('background-dragging');
+                }, 450);
+            });
+
+            document.addEventListener('pointermove', (event) => {
+                if (!isBackgroundDragging) {
+                    return;
+                }
+
+                const nextX = event.clientX;
+                const nextY = event.clientY;
+                const deltaX = nextX - backgroundDragStartX;
+                const deltaY = nextY - backgroundDragStartY;
+
+                panAllNotes(deltaX, deltaY);
+                backgroundDragStartX = nextX;
+                backgroundDragStartY = nextY;
+                event.preventDefault();
+            });
+
+            document.addEventListener('pointerup', stopBackgroundRightDrag);
+            document.addEventListener('pointercancel', stopBackgroundRightDrag);
+        }
+
+
+        // Moves every card by the same delta so the notes stay attached to the background.
+
+
+        function panAllNotes(deltaX, deltaY) {
+            if (!deltaX && !deltaY) {
+                return;
+            }
+
+            notes.forEach((note) => {
+                note.x = Math.max(0, Math.round(note.x + deltaX));
+                note.y = Math.max(0, Math.round(note.y + deltaY));
+
+                const card = noteBoard.querySelector(`[data-id="${note.id}"]`);
+                if (card) {
+                    card.style.left = `${note.x}px`;
+                    card.style.top = `${note.y}px`;
+                }
+            });
+
+            updateBoardHeight();
+        }
+
+
+        // Stops background panning, clears drag state, and saves the new card positions.
+
+
+        async function stopBackgroundRightDrag() {
+            const shouldSave = isBackgroundDragging;
+
+            clearTimeout(backgroundDragTimer);
+            backgroundDragTimer = null;
+            isBackgroundDragging = false;
+            document.body.classList.remove('background-dragging');
+
+            if (!shouldSave) {
+                return;
+            }
+
+            try {
+                await writeNotes();
+                setMessage('已保存背景拖动后的位置');
+            } catch (error) {
+                setMessage(`保存背景位置失败：${error.message}`);
+                console.error(error);
+            }
+        }
+
+
+        // Enables dragging a card from non-input and non-button areas.
+
+
+        function setupCardDrag(card, note) {
+            let isPointerDown = false;
+            let isDragging = false;
+            let hasMoved = false;
+            let startPointerX = 0;
+            let startPointerY = 0;
+            let startCardX = 0;
+            let startCardY = 0;
+            const dragThreshold = 4;
+
+            card.addEventListener('pointerdown', (event) => {
+                if (event.button !== 0 || isCardDragBlocked(event.target)) {
+                    return;
+                }
+
+                isPointerDown = true;
+                isDragging = false;
+                hasMoved = false;
+                startPointerX = event.clientX;
+                startPointerY = event.clientY;
+                startCardX = note.x;
+                startCardY = note.y;
+                card.setPointerCapture(event.pointerId);
+                bringToFront(note, card);
+                event.preventDefault();
+            });
+
+            card.addEventListener('pointermove', (event) => {
+                if (!isPointerDown) {
+                    return;
+                }
+
+                const offsetX = event.clientX - startPointerX;
+                const offsetY = event.clientY - startPointerY;
+
+                if (!isDragging && Math.hypot(offsetX, offsetY) < dragThreshold) {
+                    return;
+                }
+
+                if (!isDragging) {
+                    isDragging = true;
+                    closeFloatingMenu();
+                    card.classList.add('dragging');
+                }
+
+                const nextX = Math.max(0, startCardX + offsetX);
+                const nextY = Math.max(0, startCardY + offsetY);
+
+                note.x = Math.round(nextX);
+                note.y = Math.round(nextY);
+                card.style.left = `${note.x}px`;
+                card.style.top = `${note.y}px`;
+                hasMoved = true;
+                updateBoardHeight();
+            });
+
+            card.addEventListener('pointerup', (event) => {
+                finishDrag(event);
+            });
+
+            card.addEventListener('pointercancel', (event) => {
+                finishDrag(event);
+            });
+
+
+            // Finishes card dragging and saves position without movement logs.
+
+
+            async function finishDrag(event) {
+                if (!isPointerDown) {
+                    return;
+                }
+
+                isPointerDown = false;
+                isDragging = false;
+                card.classList.remove('dragging');
+
+                if (card.hasPointerCapture(event.pointerId)) {
+                    card.releasePointerCapture(event.pointerId);
+                }
+
+                if (!hasMoved) {
+                    return;
+                }
+
+                if (note.isDraft) {
+                    await saveOneNote(note.id, { rerender: false });
+                }
+
+                try {
+                    await writeNotes();
+                    setMessage('已保存位置');
+                } catch (error) {
+                    setMessage(`保存位置失败：${error.message}`);
+                    console.error(error);
+                }
+            }
+        }
+
+
+        // Enables dragging the delete confirmation card.
+
+
+        function setupConfirmCardDrag(card) {
+            let isDragging = false;
+            let startPointerX = 0;
+            let startPointerY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            card.addEventListener('pointerdown', (event) => {
+                if (event.button !== 0 || event.target.closest('button')) {
+                    return;
+                }
+
+                isDragging = true;
+                startPointerX = event.clientX;
+                startPointerY = event.clientY;
+                startLeft = parseInt(card.style.left, 10) || 0;
+                startTop = parseInt(card.style.top, 10) || 0;
+                card.classList.add('dragging');
+                card.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            card.addEventListener('pointermove', (event) => {
+                if (!isDragging) {
+                    return;
+                }
+
+                const maxLeft = Math.max(0, window.innerWidth - card.offsetWidth);
+                const maxTop = Math.max(0, window.innerHeight - card.offsetHeight);
+                const nextLeft = Math.min(maxLeft, Math.max(0, startLeft + event.clientX - startPointerX));
+                const nextTop = Math.min(maxTop, Math.max(0, startTop + event.clientY - startPointerY));
+
+                card.style.left = `${Math.round(nextLeft)}px`;
+                card.style.top = `${Math.round(nextTop)}px`;
+            });
+
+            card.addEventListener('pointerup', finishConfirmDrag);
+            card.addEventListener('pointercancel', finishConfirmDrag);
+
+
+            // Finishes delete-confirm dragging and releases pointer capture.
+
+
+            function finishConfirmDrag(event) {
+                if (!isDragging) {
+                    return;
+                }
+
+                isDragging = false;
+                card.classList.remove('dragging');
+
+                if (card.hasPointerCapture(event.pointerId)) {
+                    card.releasePointerCapture(event.pointerId);
+                }
+            }
+        }
+
+        // 点击全局主题按钮时打开应用主题菜单。
+        appThemeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            showAppThemeMenu();
+        });
+        // 点击搜索按钮时执行搜索。
+        searchBtn.addEventListener('click', applySearch);
+        // 搜索框按回车时执行搜索，避免提交或触发其他默认行为。
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applySearch();
+            }
+        });
+
+        // 点击新增按钮时创建一张应用内草稿卡片。
+        addBtn.addEventListener('click', addNote);
+        // 接收主进程 Edit -> 整理 菜单事件，横向整理全部卡片。
+        ipcRenderer.on('notes:organize', () => {
+            organizeNotes();
+        });
+        // 接收主进程 Ctrl+Q 快捷键事件，创建桌面中心快速便签。
+        ipcRenderer.on('notes:create-quick-desktop', () => {
+            createQuickDesktopNote();
+        });
+        // 接收桌面便签窗口保存事件，把修改同步回应用内卡片。
+        ipcRenderer.on('notes:update-from-desktop', (_event, notePatch) => {
+            updateNoteFromDesktop(notePatch || {});
+        });
+        // 点击浮动菜单外部时关闭当前菜单。
+        document.addEventListener('click', (event) => {
+            if (openFloatingMenu && !openFloatingMenu.contains(event.target) && event.target !== appThemeBtn) {
+                closeFloatingMenu();
+            }
+        });
+        // 窗口尺寸变化时关闭菜单并重新计算画布高度。
+        window.addEventListener('resize', () => {
+            closeFloatingMenu();
+            updateBoardHeight();
+        });
+
+        // 启动背景右键长按拖动主窗口功能。
+        setupBackgroundRightDrag();
+        // 启动时应用上次选择的全局主题。
+        applyAppTheme(appTheme);
+        // 启动时读取本地便签并渲染页面。
+        loadNotes();
+    </script>
+</body>
+</html>

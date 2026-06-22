@@ -1,0 +1,24 @@
+{
+  "name": "miaomiao-notes",
+  "version": "1.0.0",
+  "description": "喵喵便签",
+  "productName": "喵喵便签",
+  "main": "mian.js",
+  "scripts": {
+    "start": "electron .",
+    "build:icon": "node scripts/build-icon.js",
+    "package:win": "node scripts/package-win.js",
+    "build:win": "npm run build:icon && npm run package:win"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.18.0",
+    "cheerio": "^1.2.0"
+  },
+  "devDependencies": {
+    "electron": "^42.4.1"
+  }
+}
