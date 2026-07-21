@@ -1,0 +1,57 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    name: Windows x64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python image tools
+        run: python -m pip install --upgrade pillow
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Windows package
+        run: npm run build:win
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CatNote-Windows-x64
+          path: |
+            dist/CatNote-win-x64-portable.zip
+            dist/CatNote-win-x64-installer.zip
+            dist/打包说明.txt
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/CatNote-win-x64-portable.zip
+            dist/CatNote-win-x64-installer.zip
+            dist/打包说明.txt
