@@ -5,29 +5,31 @@ const { spawnSync } = require('child_process');
 
 // Keep Chinese output as Unicode escapes so this script stays ASCII-safe in any terminal.
 const zh = {
-    productName: '\u55b5\u55b5\u4fbf\u7b3a',
-    portableLauncher: '\u542f\u52a8\u55b5\u55b5\u4fbf\u7b3a.bat',
+    productName: '\u55b5\u55b5\u4fbf\u7b7e',
+    portableLauncher: '\u542f\u52a8\u55b5\u55b5\u4fbf\u7b7e.bat',
     projectLauncher: '\u542f\u52a8\u9879\u76ee\u7248.bat',
-    shortcutName: '\u55b5\u55b5\u4fbf\u7b3a.lnk',
-    installerName: '\u55b5\u55b5\u4fbf\u7b3a\u5b89\u88c5\u5305',
+    shortcutName: '\u55b5\u55b5\u4fbf\u7b7e.lnk',
+    installerName: '\u55b5\u55b5\u4fbf\u7b7e\u5b89\u88c5\u5305',
     buildNotes: '\u6253\u5305\u8bf4\u660e.txt',
-    installDone: '\u55b5\u55b5\u4fbf\u7b3a\u5df2\u5b89\u88c5\u5230 %TARGET%',
+    installDone: '\u55b5\u55b5\u4fbf\u7b7e\u5df2\u5b89\u88c5\u5230 %TARGET%',
     shortcutDone: '\u684c\u9762\u5feb\u6377\u65b9\u5f0f\u5df2\u521b\u5efa\u3002',
-    installSkipped: '\u672c\u673a IExpress \u672a\u80fd\u751f\u6210 EXE \u5b89\u88c5\u5305\uff0c\u8bf7\u76f4\u63a5\u4f7f\u7528\u4fbf\u643a\u7248\u6216 dist/installer/install.bat\u3002'
+    installSkipped: 'EXE \u5b89\u88c5\u5668\u672a\u751f\u6210\uff1b\u8bf7\u4f7f\u7528\u5b89\u88c5\u5305 zip \u6216 dist/installer/install.bat\u3002\u5982\u9700\u5c1d\u8bd5 IExpress\uff0c\u8bf7\u8bbe\u7f6e CREATE_IEXPRESS=1 \u540e\u91cd\u65b0\u8fd0\u884c\u3002'
 };
 
 // Project paths used by both portable packaging and installer generation.
 const root = path.resolve(__dirname, '..');
 const distRoot = path.join(root, 'dist');
 const runtimeDir = path.join(root, 'node_modules', 'electron', 'dist');
-const appName = 'Miaomiao Notes';
-const exeName = 'MiaomiaoNotes.exe';
+const appName = 'CatNote';
+const exeName = 'CatNote.exe';
 const portableDir = path.join(distRoot, 'win-x64', appName);
 const installerDir = path.join(distRoot, 'installer');
-const portableZip = path.join(distRoot, 'MiaomiaoNotes-win-x64-portable.zip');
+const portableZip = path.join(distRoot, 'CatNote-win-x64-portable.zip');
+const installerPackageZip = path.join(distRoot, 'CatNote-win-x64-installer.zip');
 const installerZip = path.join(installerDir, path.basename(portableZip));
-const installerExe = path.join(installerDir, 'MiaomiaoNotes-win-x64-setup.exe');
+const installerExe = path.join(installerDir, 'CatNote-win-x64-setup.exe');
 const iconPath = path.join(root, 'assets', 'app-icon.ico');
+const exeIconScript = path.join(root, 'scripts', 'apply-exe-icon.py');
 
 function removePath(target) {
     // Remove only generated packaging paths.
@@ -76,7 +78,9 @@ function writeAppPackage() {
         'notes.json',
         'package.json',
         'package-lock.json',
-        '.npmrc'
+        '.npmrc',
+        'README.md',
+        'LICENSE'
     ];
 
     for (const file of includeFiles) {
@@ -126,11 +130,11 @@ function writeInstallerFiles() {
     fs.writeFileSync(shortcutVbs, [
         'Set shell = CreateObject("WScript.Shell")',
         'desktop = shell.SpecialFolders("Desktop")',
-        'target = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\MiaomiaoNotes\\MiaomiaoNotes.exe"',
-        'icon = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\MiaomiaoNotes\\resources\\app\\assets\\app-icon.ico"',
+        'target = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\CatNote\\CatNote.exe"',
+        'icon = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\CatNote\\resources\\app\\assets\\app-icon.ico"',
         `Set link = shell.CreateShortcut(desktop & "\\${zh.shortcutName}")`,
         'link.TargetPath = target',
-        'link.WorkingDirectory = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\MiaomiaoNotes"',
+        'link.WorkingDirectory = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\CatNote"',
         'link.IconLocation = icon',
         'link.Save'
     ].join('\r\n'), 'utf8');
@@ -138,13 +142,13 @@ function writeInstallerFiles() {
     fs.writeFileSync(installBat, [
         '@echo off',
         'chcp 65001 >nul',
-        'set "TARGET=%LOCALAPPDATA%\\MiaomiaoNotes"',
+        'set "TARGET=%LOCALAPPDATA%\\CatNote"',
         `set "ZIP=%~dp0${zipName}"`,
-        'set "WORK=%TEMP%\\MiaomiaoNotesInstall"',
+        'set "WORK=%TEMP%\\CatNoteInstall"',
         'if exist "%WORK%" rmdir /S /Q "%WORK%"',
         'if not exist "%TARGET%" mkdir "%TARGET%"',
         'powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath \\"%ZIP%\\" -DestinationPath \\"%WORK%\\" -Force"',
-        'xcopy /E /I /Y "%WORK%\\Miaomiao Notes\\*" "%TARGET%\\" >nul',
+        'xcopy /E /I /Y "%WORK%\\CatNote\\*" "%TARGET%\\" >nul',
         'cscript //nologo "%~dp0create-shortcut.vbs"',
         `echo ${zh.installDone}`,
         `echo ${zh.shortcutDone}`,
@@ -233,16 +237,39 @@ function createPortableZip() {
     ], { timeout: 180000 });
 }
 
-function createInstaller() {
-    // Use Windows' built-in IExpress when it is available; keep the portable build even if it fails.
-    const sedPath = writeInstallerFiles();
+function createInstallerPackageZip() {
+    // Zip the generated installer folder so the install script is distributed as one package.
+    removePath(installerPackageZip);
+    run('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        `Compress-Archive -Path '${installerDir}\\*' -DestinationPath '${installerPackageZip}' -Force`
+    ], { timeout: 180000 });
+}
 
-    if (process.env.SKIP_IEXPRESS === '1') {
+function applyExecutableIcon(appExe) {
+    // Replace Electron's default EXE icon so Windows Explorer and shortcuts show CatNote artwork.
+    if (!fs.existsSync(exeIconScript)) {
+        console.warn(`Icon patcher not found: ${exeIconScript}`);
+        return;
+    }
+
+    run('python', [exeIconScript, appExe, iconPath], { timeout: 60000 });
+}
+
+function createInstaller() {
+    // Always make the script-based installer package, and only try IExpress when explicitly requested.
+    const sedPath = writeInstallerFiles();
+    createInstallerPackageZip();
+
+    if (process.env.SKIP_IEXPRESS === '1' || process.env.CREATE_IEXPRESS !== '1') {
         return false;
     }
 
     try {
-        run('iexpress.exe', ['/N', sedPath], { timeout: 90000 });
+        run('iexpress.exe', ['/N', sedPath], { timeout: 300000 });
         return fs.existsSync(installerExe);
     } catch (error) {
         console.warn(error.message);
@@ -257,6 +284,7 @@ function writeBuildNotes(installerCreated) {
         '',
         `Portable app: ${portableDir}`,
         `Portable zip: ${portableZip}`,
+        `Installer package zip: ${installerPackageZip}`,
         `Executable: ${path.join(portableDir, exeName)}`,
         installerCreated ? `Installer: ${installerExe}` : zh.installSkipped,
         `Icon: ${iconPath}`,
@@ -286,6 +314,7 @@ function main() {
     if (fs.existsSync(electronExe)) {
         fs.renameSync(electronExe, appExe);
     }
+    applyExecutableIcon(appExe);
 
     writeAppPackage();
     writeLaunchers();
@@ -299,6 +328,7 @@ function main() {
 
     console.log(`Portable app: ${portableDir}`);
     console.log(`Portable zip: ${portableZip}`);
+    console.log(`Installer package zip: ${installerPackageZip}`);
     console.log(`Executable: ${appExe}`);
     console.log(installerCreated ? `Installer: ${installerExe}` : 'Installer: skipped because IExpress failed');
     console.log(`Icon: ${iconPath}`);

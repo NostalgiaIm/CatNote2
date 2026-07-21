@@ -11,11 +11,13 @@ let mainWindow = null;
 // 将 Electron 缓存与用户数据放在项目目录内，避免系统缓存目录权限导致启动失败。
 const USER_DATA_DIR = path.join(__dirname, '.electron-user-data');
 const APP_ICON = path.join(__dirname, 'assets', 'app-icon.ico');
+const APP_NAME = 'CatNote';
 
 // 确保项目内的 Electron 用户数据目录存在。
 fs.mkdirSync(USER_DATA_DIR, { recursive: true });
 // 设置 Electron 用户数据目录，缓存、LocalStorage 等都会写入这里。
 app.setPath('userData', USER_DATA_DIR);
+app.setName(APP_NAME);
 // 禁用硬件加速，降低部分 Windows 环境下 GPU 进程崩溃的概率。
 app.disableHardwareAcceleration();
 // 显式禁用 GPU，配合 disableHardwareAcceleration 做兼容兜底。
@@ -71,6 +73,7 @@ function createDesktopCardWindow(note, options = {}) {
         height: 330,
         minWidth: 260,
         minHeight: 220,
+        icon: APP_ICON,
         alwaysOnTop: true,
         frame: false,
         resizable: true,
@@ -336,6 +339,7 @@ function createWindow() {
         title: '喵喵便签',
         width: 800,
         height: 600,
+        icon: APP_ICON,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
