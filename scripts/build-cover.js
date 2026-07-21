@@ -1,16 +1,17 @@
-// Generate a project cover image from the app icon artwork for README and packaging.
+// Generate the README display image from the app icon and the optional cover reference.
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-// Centralize asset paths so the generated cover is easy to reference from README and packages.
+// Keep asset paths centralized so README and packaged builds share one cover.
 const root = path.resolve(__dirname, '..');
 const assetDir = path.join(root, 'assets');
 const iconPath = path.join(assetDir, 'app-icon.png');
+const sourceCoverPath = path.join(assetDir, 'cover-source.jpg');
 const coverPath = path.join(assetDir, 'cover.png');
 
 function runPython(script) {
-    // Pillow gives us deterministic image composition without adding runtime app dependencies.
+    // Pillow gives deterministic composition and exact Chinese text rendering.
     const result = spawnSync('python', ['-c', script], {
         cwd: root,
         encoding: 'utf8',
@@ -35,48 +36,74 @@ if (!fs.existsSync(iconPath)) {
 
 fs.mkdirSync(assetDir, { recursive: true });
 
-// The Python block creates a warm, app-store-style cover:
-// 1. draw a soft yellow/pink background;
-// 2. place the generated app icon on the left with a shadow;
-// 3. add the product name, English name, tagline and platform chips;
-// 4. export a 1600x900 PNG suitable for README previews and release pages.
+// The Python block creates the project display image:
+// 1. use cover-source.jpg when present to preserve the user's chosen visual;
+// 2. clean and rebuild only the right text area;
+// 3. keep title and app name free of ruled lines;
+// 4. place body copy and chips naturally on the right-side notebook lines.
 const pythonScript = String.raw`
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 icon_path = Path(r"${iconPath}")
+source_cover_path = Path(r"${sourceCoverPath}")
 cover_path = Path(r"${coverPath}")
 
-width, height = 1600, 900
-bg_top = (255, 232, 145)
-bg_bottom = (255, 198, 83)
-canvas = Image.new("RGBA", (width, height), bg_top + (255,))
-pixels = canvas.load()
+width, height = 1280, 708
 
-# Paint a vertical warm gradient that matches the cat notebook icon.
-for y in range(height):
-    t = y / (height - 1)
-    r = int(bg_top[0] * (1 - t) + bg_bottom[0] * t)
-    g = int(bg_top[1] * (1 - t) + bg_bottom[1] * t)
-    b = int(bg_top[2] * (1 - t) + bg_bottom[2] * t)
-    for x in range(width):
-        pixels[x, y] = (r, g, b, 255)
+def background_color(x, y):
+    # Match the soft yellow-orange tone of the provided reference image.
+    vertical = y / (height - 1)
+    horizontal = x / (width - 1)
+    r = int(255 - 2 * vertical)
+    g = int(244 * (1 - vertical) + 198 * vertical - 7 * horizontal)
+    b = int(128 * (1 - vertical) + 55 * vertical + 5 * horizontal)
+    return max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b)), 255
+
+def make_background():
+    # Build a reusable clean background for repaired regions.
+    image = Image.new("RGBA", (width, height), (255, 230, 92, 255))
+    pixels = image.load()
+    for yy in range(height):
+        for xx in range(width):
+            pixels[xx, yy] = background_color(xx, yy)
+    return image
+
+if source_cover_path.exists():
+    # Use the supplied display image as the base so the left icon/card stays faithful.
+    canvas = Image.open(source_cover_path).convert("RGBA").resize((width, height), Image.Resampling.LANCZOS)
+else:
+    # Fall back to a generated background and app icon when the source image is absent.
+    canvas = make_background()
+
+clean_bg = make_background()
+
+# Feather in a clean right side to remove the previous text and old notebook rules.
+mask = Image.new("L", (width, height), 0)
+mask_pixels = mask.load()
+for yy in range(height):
+    for xx in range(width):
+        if xx < 525:
+            alpha = 0
+        elif xx > 555:
+            alpha = 255
+        else:
+            alpha = int((xx - 525) / 30 * 255)
+        mask_pixels[xx, yy] = alpha
+canvas = Image.composite(clean_bg, canvas, mask)
 
 draw = ImageDraw.Draw(canvas)
 
-# Add soft decorative cards and notebook lines in the background.
-for box, fill in [
-    ((80, 80, 650, 780), (255, 255, 255, 62)),
-    ((1030, 95, 1520, 780), (255, 244, 218, 76)),
-    ((960, 610, 1515, 815), (255, 255, 255, 82)),
-]:
-    draw.rounded_rectangle(box, radius=56, fill=fill)
+def rounded_shadow(box, radius, blur, offset, shadow_fill):
+    # Draw one soft shadow behind a rounded rectangle.
+    layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    layer_draw = ImageDraw.Draw(layer)
+    shifted = (box[0] + offset[0], box[1] + offset[1], box[2] + offset[0], box[3] + offset[1])
+    layer_draw.rounded_rectangle(shifted, radius=radius, fill=shadow_fill)
+    return layer.filter(ImageFilter.GaussianBlur(blur))
 
-for y in range(185, 760, 66):
-    draw.line((1010, y, 1485, y), fill=(162, 106, 45, 42), width=4)
-
-# Font helpers prefer Microsoft YaHei on Windows, then fall back gracefully.
 def pick_font(size, bold=False):
+    # Prefer Microsoft YaHei for crisp Chinese text on Windows.
     candidates = [
         r"C:\Windows\Fonts\msyhbd.ttc" if bold else r"C:\Windows\Fonts\msyh.ttc",
         r"C:\Windows\Fonts\simhei.ttf",
@@ -87,48 +114,66 @@ def pick_font(size, bold=False):
             return ImageFont.truetype(candidate, size)
     return ImageFont.load_default()
 
-title_font = pick_font(94, True)
-subtitle_font = pick_font(48, True)
-body_font = pick_font(34)
-chip_font = pick_font(28, True)
+def text_size(text, font):
+    # Keep measurements stable for chip sizing and line placement.
+    box = draw.textbbox((0, 0), text, font=font)
+    return box[2] - box[0], box[3] - box[1]
 
-# Paste the app icon with a soft drop shadow.
-icon = Image.open(icon_path).convert("RGBA").resize((460, 460), Image.Resampling.LANCZOS)
-shadow = Image.new("RGBA", icon.size, (0, 0, 0, 0))
-shadow.putalpha(icon.getchannel("A"))
-shadow = shadow.filter(ImageFilter.GaussianBlur(22))
-shadow_color = Image.new("RGBA", shadow.size, (84, 54, 22, 100))
-shadow_color.putalpha(shadow.getchannel("A"))
-canvas.alpha_composite(shadow_color, (190, 238))
-canvas.alpha_composite(icon, (170, 210))
+def draw_text_on_rule(x, rule_y, text, font, fill):
+    # Place text just above a ruled line so it reads as written on the page.
+    _, text_h = text_size(text, font)
+    draw.text((x, rule_y - text_h - 8), text, font=font, fill=fill)
 
-# Draw title copy and product positioning.
-title = "\u55b5\u55b5\u4fbf\u7b3a"
-subtitle = "CatNote"
-tagline = "\u8ba9\u7075\u611f\u6709\u5e8f\uff0c\u8ba9\u8bb0\u5f55\u66f4\u6e29\u6696\u3002"
-description = "Windows x64  \u00b7  Electron  \u00b7  Local JSON"
+title_font = pick_font(62, True)
+subtitle_font = pick_font(35, True)
+body_font = pick_font(27)
+chip_font = pick_font(22, True)
 
-text_x = 700
-draw.text((text_x, 255), title, font=title_font, fill=(74, 40, 23))
-draw.text((text_x + 4, 372), subtitle, font=subtitle_font, fill=(112, 66, 38))
-draw.text((text_x + 4, 470), tagline, font=body_font, fill=(92, 58, 38))
-draw.text((text_x + 4, 528), description, font=body_font, fill=(115, 74, 45))
+# Recreate a wider right notebook card so all text fits without clipping.
+paper_box = (650, 72, 1217, 610)
+canvas.alpha_composite(rounded_shadow(paper_box, 34, 18, (10, 14), (93, 62, 26, 42)))
+draw.rounded_rectangle(paper_box, radius=34, fill=(255, 252, 226, 226))
 
-# Draw compact feature chips.
+# Recreate the lower floating note strip for the feature chips.
+chip_paper = (650, 486, 1218, 646)
+canvas.alpha_composite(rounded_shadow(chip_paper, 30, 16, (8, 12), (91, 58, 24, 42)))
+draw.rounded_rectangle(chip_paper, radius=30, fill=(255, 255, 248, 236))
+
+# Draw only lower notebook rules; the title block intentionally has no underline.
+rule_color = (143, 89, 42, 56)
+for rule_y in (392, 448, 506):
+    draw.line((690, rule_y, 1185, rule_y), fill=rule_color, width=3)
+for rule_y in (562, 616):
+    draw.line((690, rule_y, 1185, rule_y), fill=rule_color, width=3)
+
+text_x = 690
+title_color = (70, 38, 23)
+subtitle_color = (104, 61, 36)
+body_color = (91, 57, 37)
+
+# The main product name and English name sit in a clean title-safe area.
+draw.text((text_x, 160), "\u55b5\u55b5\u4fbf\u7b7e", font=title_font, fill=title_color)
+draw.text((text_x + 3, 244), "CatNote", font=subtitle_font, fill=subtitle_color)
+
+# Supporting copy is aligned to the right-side notebook rules.
+draw_text_on_rule(text_x + 3, 392, "\u8ba9\u7075\u611f\u6709\u5e8f\uff0c\u8ba9\u8bb0\u5f55\u66f4\u6e29\u6696\u3002", body_font, body_color)
+draw_text_on_rule(text_x + 3, 448, "Windows x64  \u00b7  Electron  \u00b7  Local JSON", body_font, (112, 71, 45))
+
+# Compact chips sit on the lower strip and mask the rule line under each label.
 chips = [
     "\u591a\u4e3b\u9898",
     "\u81ea\u52a8\u4fdd\u5b58",
-    "\u684c\u9762\u4fbf\u7b3a",
+    "\u684c\u9762\u4fbf\u7b7e",
     "Ctrl + Q",
 ]
-chip_x = text_x + 4
-chip_y = 625
+chip_x = 690
+chip_y = 522
 for chip in chips:
-    bbox = draw.textbbox((0, 0), chip, font=chip_font)
-    chip_w = bbox[2] - bbox[0] + 42
-    draw.rounded_rectangle((chip_x, chip_y, chip_x + chip_w, chip_y + 54), radius=27, fill=(255, 255, 255, 150))
-    draw.text((chip_x + 21, chip_y + 9), chip, font=chip_font, fill=(90, 55, 35))
-    chip_x += chip_w + 18
+    chip_w, chip_h = text_size(chip, chip_font)
+    pill_w = chip_w + 32
+    draw.rounded_rectangle((chip_x, chip_y, chip_x + pill_w, chip_y + 43), radius=22, fill=(255, 255, 255, 226))
+    draw.text((chip_x + 16, chip_y + 7), chip, font=chip_font, fill=(86, 52, 35))
+    chip_x += pill_w + 14
 
 cover_path.parent.mkdir(parents=True, exist_ok=True)
 canvas.convert("RGB").save(cover_path, "PNG")
