@@ -5,6 +5,7 @@ node_modules/
 dist/
 *.zip
 *.exe
+启动项目版.bat
 
 # Local Electron/runtime state
 .electron-user-data/

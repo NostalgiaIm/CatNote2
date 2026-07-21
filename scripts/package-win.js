@@ -277,6 +277,24 @@ function createInstaller() {
     }
 }
 
+function ensureElectronRuntime() {
+    // Fresh npm installs may install the electron npm package before downloading the runtime binary.
+    if (fs.existsSync(runtimeDir)) {
+        return;
+    }
+
+    console.log('Electron runtime missing; downloading Electron binary...');
+    try {
+        require('electron');
+    } catch (error) {
+        throw new Error(`Electron runtime download failed: ${error.message}`);
+    }
+
+    if (!fs.existsSync(runtimeDir)) {
+        throw new Error(`Electron runtime not found after download: ${runtimeDir}`);
+    }
+}
+
 function writeBuildNotes(installerCreated) {
     // Write a short human-readable map of generated artifacts.
     const notes = [
@@ -298,10 +316,8 @@ function writeBuildNotes(installerCreated) {
 }
 
 function main() {
-    // Validate the local Electron runtime before building any generated outputs.
-    if (!fs.existsSync(runtimeDir)) {
-        throw new Error(`Electron runtime not found: ${runtimeDir}`);
-    }
+    // Validate or download the local Electron runtime before building generated outputs.
+    ensureElectronRuntime();
 
     console.log('Building portable folder...');
     removePath(path.join(distRoot, 'win-x64'));
