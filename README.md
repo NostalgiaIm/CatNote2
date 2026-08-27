@@ -9,6 +9,8 @@
 
 ![CatNote cover](assets/cover.png)
 
+<img src="https://count.getloli.com/@CatNote?theme=gelbooru&padding=7&scale=1" alt=" " />
+
 ## Introduction
 
 CatNote, also named 喵喵便签, is a lightweight Windows x64 desktop sticky-note app built with Electron, HTML, CSS, and JavaScript. It stores notes locally in JSON, supports multiple themes, global search, free card dragging, desktop notes, always-on-top windows, quick note creation, and automatic saving.
