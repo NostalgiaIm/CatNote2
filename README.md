@@ -9,7 +9,9 @@
 
 ![CatNote cover](assets/cover.png)
 
-<img src="https://count.getloli.com/@CatNote?theme=gelbooru&padding=7&scale=1" alt=" " />
+<div align="center">
+  <img src="https://count.getloli.com/@CatNote?theme=gelbooru&padding=7&scale=1" alt="" />
+</div>
 
 ## Introduction
 
